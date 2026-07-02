@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
+    APP_NAME: str = "Production RAG"
     DATABASE_URL: str 
     VALKEY_URL: str
     PINECONE_API_KEY : str
