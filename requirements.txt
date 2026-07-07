@@ -7,3 +7,4 @@ valkey
 pinecone
 prometheus-fastapi-instrumentator
 openai
+sentence-transformers
