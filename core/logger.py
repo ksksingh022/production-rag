@@ -1,6 +1,6 @@
 import logging
 import sys
-from config import settings
+from .config import settings
 
 def setup_logging():
     """Configures the root logger for the application."""

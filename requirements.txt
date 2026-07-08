@@ -8,3 +8,5 @@ pinecone
 prometheus-fastapi-instrumentator
 openai
 sentence-transformers
+datasets
+langchain-text-splitters
