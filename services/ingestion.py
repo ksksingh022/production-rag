@@ -1,6 +1,6 @@
 import hashlib
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from core.embeddings import embedding_client  # Dynamic Strategy Engine Pattern Integrated
+from core.embeddings import hf_embedding_client  # Dynamic Strategy Engine Pattern Integrated
 from core import vector_manager, cache_manager, get_logger
 
 logger = get_logger("ingestion_service")
@@ -61,7 +61,7 @@ class IngestionService:
                 chunk_id = chunk_ids_to_clean[i]
                 
                 # REWRITTEN: Ab koi OpenAI direct coupling nahi, dynamic backend wrapper strategy active hai
-                embedding = embedding_client.get_embedding(chunk_text)
+                embedding = hf_embedding_client.get_embedding(chunk_text)
                 
                 payload_metadata = {
                     **metadata,

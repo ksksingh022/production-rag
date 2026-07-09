@@ -54,8 +54,6 @@ def import_and_embed_hf_dataset(
             status = ingestion_service.ingest_raw_text(
                 document_id=doc_id,
                 raw_text=raw_text,
-                provider=provider,
-                model_name=model_name,
                 metadata=metadata
             )
             
@@ -77,7 +75,7 @@ if __name__ == "__main__":
     # id_column: 'id'
     
     import_and_embed_hf_dataset(
-        dataset_name="squad",
+        dataset_name="neural-bridge/rag-dataset-12000",
         text_column="context",
         id_column="id",
         provider="huggingface",             # Yahan aap 'openai' bhi likh sakte ho

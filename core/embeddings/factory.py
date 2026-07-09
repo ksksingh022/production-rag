@@ -1,13 +1,12 @@
 from typing import Type
 from core.embeddings.base import BaseEmbeddingEngine
-from core.embeddings.providers import HuggingFaceEmbeddingEngine, OpenAIEmbeddingEngine, OllamaEmbeddingEngine
+from core.embeddings.providers import HuggingFaceEmbeddingEngine, OllamaEmbeddingEngine
 
 class EmbeddingFactory:
     """Factory Pattern to handle dynamic resolution of embedding providers."""
     
     # Registering our engines inside a dynamic dictionary map
     _registry: dict[str, Type[BaseEmbeddingEngine]] = {
-        "openai": OpenAIEmbeddingEngine,
         "ollama": OllamaEmbeddingEngine,
         "huggingface": HuggingFaceEmbeddingEngine
     }
