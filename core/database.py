@@ -1,7 +1,7 @@
 from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from config import settings
+from .config import settings
 
 # Optimized for managed cloud databases like Aiven
 engine = create_engine(

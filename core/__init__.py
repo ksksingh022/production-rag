@@ -1,8 +1,8 @@
-from config import settings
-from logger import setup_logging, get_logger
-from database import get_db, Base
-from cache import cache_manager
-from vector_store import vector_manager
+from .config import settings
+from .logger import setup_logging, get_logger
+from .database import get_db, Base
+from .cache import cache_manager
+from .vector_store import vector_manager
 
 setup_logging()
 logger = get_logger("core_init")

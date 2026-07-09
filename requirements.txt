@@ -5,3 +5,8 @@ sqlalchemy
 psycopg2
 valkey
 pinecone
+prometheus-fastapi-instrumentator
+openai
+sentence-transformers
+datasets
+langchain-text-splitters
