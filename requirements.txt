@@ -5,6 +5,7 @@ sqlalchemy
 psycopg2
 valkey
 pinecone
+pinecone-text
 prometheus-fastapi-instrumentator
 openai
 sentence-transformers
