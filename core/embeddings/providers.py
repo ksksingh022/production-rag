@@ -15,6 +15,20 @@ class HuggingFaceEmbeddingEngine(BaseEmbeddingEngine):
         embedding = self.model.encode(text, convert_to_numpy=True)
         return embedding.tolist()
 
+    def get_embeddings(self, texts: list[str]) -> list[list[float]]:
+        # sentence-transformers encodes a list in internal mini-batches, much faster than a Python-level loop
+        if not texts:
+            return []
+        embeddings = self.model.encode(texts, convert_to_numpy=True, batch_size=32, show_progress_bar=False)
+        return embeddings.tolist()
+
+    def get_tokenizer(self):
+        return self.model.tokenizer
+
+    @property
+    def max_tokens(self) -> int | None:
+        return self.model.get_max_seq_length()
+
 
 class OllamaEmbeddingEngine(BaseEmbeddingEngine):
     """Strategy implementation for Local Ollama Embeddings."""
