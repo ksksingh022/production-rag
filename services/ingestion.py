@@ -4,6 +4,7 @@ from core.embeddings import hf_embedding_client  # Dynamic Strategy Engine Patte
 from core.embeddings.sparse import BM25SparseEncoder
 from core.config import settings
 from core import vector_manager, cache_manager, get_logger
+from services.cache_service import CACHE_EPOCH_KEY
 
 logger = get_logger("ingestion_service")
 
@@ -125,7 +126,11 @@ class IngestionService:
             # 6. TRANSACTION SUCCESS PERSISTENCE
             self.valkey_client.set(redis_hash_key, current_hash)
             self.valkey_client.set(status_key, "completed")
-            
+
+            # Bump the query-cache epoch so previously-cached answers (now potentially
+            # stale against this updated/new content) age out instead of being served.
+            self.valkey_client.incr(CACHE_EPOCH_KEY)
+
             logger.info(f"Successfully ingested {len(vectors_to_upsert)} chunks for document {document_id}")
             return "success"
 
