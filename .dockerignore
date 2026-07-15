@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.git/
+.DS_Store
+ui/
+scripts/__pycache__/
+api/__pycache__/
+core/__pycache__/
+models/__pycache__/
+services/__pycache__/
+.env
+.env.*
