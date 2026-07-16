@@ -1,13 +1,3 @@
----
-title: BridgeMind
-emoji: 🌉
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # BridgeMind
 
 A production-grade Retrieval-Augmented Generation (RAG) system: ingest documents, index
