@@ -19,6 +19,15 @@ ENV HOME=/home/appuser \
     HF_HOME=/home/appuser/.cache/huggingface \
     PORT=8000
 
+# Bake model weights into the image at build time -- cold starts on ephemeral
+# platforms (Cloud Run) otherwise re-download these from Hugging Face Hub on
+# every scale-from-zero, which hangs/crashes the readiness probe if that
+# network call is slow or flaky.
+RUN python -c "\
+from sentence_transformers import SentenceTransformer, CrossEncoder; \
+SentenceTransformer('all-MiniLM-L6-v2'); \
+CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+
 EXPOSE 8000
 
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
