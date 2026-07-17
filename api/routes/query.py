@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from core.database import get_db
+from core.database import get_db, SessionLocal
 from core.config import settings
 from core.reranker import reranker
 from core.embeddings import hf_embedding_client
@@ -46,10 +46,17 @@ async def query(request: Request, payload: QueryRequest, db: Session = Depends(g
 
 @router.post("/query/stream")
 @limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
-async def query_stream(request: Request, payload: QueryRequest, db: Session = Depends(get_db)):
+async def query_stream(request: Request, payload: QueryRequest):
     """SSE stream of answer tokens, followed by a final event with sources/metrics.
     Shares the same Valkey cache as POST /query -- a cache hit replays the stored
-    answer as a single delta instead of re-running retrieval/rerank/generation."""
+    answer as a single delta instead of re-running retrieval/rerank/generation.
+
+    No DB session is injected at the route level -- a stream can run for a while
+    and the client can disconnect mid-generation, which would otherwise hold a
+    request-scoped session (and its pool connection) open indefinitely since
+    its cleanup never runs on an abandoned generator. Each generator opens its
+    own short-lived session only at the point it actually writes the query log.
+    """
     start_total = time.time()
     top_k = payload.top_k or settings.TOP_K
     rerank_enabled = settings.RERANK_ENABLED if payload.rerank is None else payload.rerank
@@ -78,16 +85,17 @@ async def query_stream(request: Request, payload: QueryRequest, db: Session = De
                 yield f"data: {json.dumps({'done': True, 'query_id': str(query_id), 'sources': cached['sources'], 'metrics': metrics})}\n\n"
 
                 try:
-                    log_query(
-                        db, query_id=query_id, query_text=payload.query,
-                        normalized_query=_normalize_query(payload.query),
-                        retrieved_ids=[s["chunk_id"] for s in cached["sources"]],
-                        scores=[s["score"] for s in cached["sources"]],
-                        answer=cached["answer"], retrieval_ms=0.0, rerank_ms=0.0, generation_ms=0.0,
-                        total_ms=total_ms, prompt_tokens=0, completion_tokens=0, estimated_cost_usd=0.0,
-                        cache_hit=True, provider=provider, model=model,
-                        embedding_model=hf_embedding_client.model_name,
-                    )
+                    with SessionLocal() as db:
+                        log_query(
+                            db, query_id=query_id, query_text=payload.query,
+                            normalized_query=_normalize_query(payload.query),
+                            retrieved_ids=[s["chunk_id"] for s in cached["sources"]],
+                            scores=[s["score"] for s in cached["sources"]],
+                            answer=cached["answer"], retrieval_ms=0.0, rerank_ms=0.0, generation_ms=0.0,
+                            total_ms=total_ms, prompt_tokens=0, completion_tokens=0, estimated_cost_usd=0.0,
+                            cache_hit=True, provider=provider, model=model,
+                            embedding_model=hf_embedding_client.model_name,
+                        )
                 except Exception as e:
                     logger.warning(f"Failed to persist cached streamed query log: {e}")
 
@@ -157,16 +165,17 @@ async def query_stream(request: Request, payload: QueryRequest, db: Session = De
         yield f"data: {json.dumps({'done': True, 'query_id': str(query_id), 'sources': sources, 'metrics': metrics})}\n\n"
 
         try:
-            log_query(
-                db, query_id=query_id, query_text=payload.query,
-                normalized_query=_normalize_query(payload.query),
-                retrieved_ids=[c.chunk_id for c in top_chunks], scores=[c.score for c in top_chunks],
-                answer=full_text, retrieval_ms=retrieval_ms, rerank_ms=rerank_ms,
-                generation_ms=generation_ms, total_ms=total_ms,
-                prompt_tokens=prompt_tokens, completion_tokens=completion_tokens,
-                estimated_cost_usd=cost, cache_hit=False,
-                provider=provider, model=model, embedding_model=hf_embedding_client.model_name,
-            )
+            with SessionLocal() as db:
+                log_query(
+                    db, query_id=query_id, query_text=payload.query,
+                    normalized_query=_normalize_query(payload.query),
+                    retrieved_ids=[c.chunk_id for c in top_chunks], scores=[c.score for c in top_chunks],
+                    answer=full_text, retrieval_ms=retrieval_ms, rerank_ms=rerank_ms,
+                    generation_ms=generation_ms, total_ms=total_ms,
+                    prompt_tokens=prompt_tokens, completion_tokens=completion_tokens,
+                    estimated_cost_usd=cost, cache_hit=False,
+                    provider=provider, model=model, embedding_model=hf_embedding_client.model_name,
+                )
         except Exception as e:
             logger.warning(f"Failed to persist streamed query log: {e}")
 

@@ -9,10 +9,21 @@ from .config import settings
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
-    pool_size=2,
-    max_overflow=2,
+    pool_size=3,
+    max_overflow=3,
     pool_recycle=1800,
-    pool_timeout=30
+    pool_timeout=30,
+    # Cloud Run can kill an instance without a clean disconnect (e.g. on scale-down
+    # or a crash), leaving a dead TCP connection Postgres won't notice until the OS's
+    # default keepalive timeout (~2h on Linux). These force detection within ~60s so
+    # dead connections from past instances don't sit reserved against the free-tier
+    # 20-connection cap until Aiven eventually reaps them on its own.
+    connect_args={
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 3,
+    }
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
