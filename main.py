@@ -40,3 +40,9 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 @app.get("/")
 def root():
     return {"message": "Welcome to the Main App"}
+
+@app.on_event("shutdown")
+def _dispose_db_engine():
+    # On a clean scale-down/restart signal, release pooled connections instead of
+    # leaving them for Postgres to notice via keepalive (see core/database.py).
+    engine.dispose()
